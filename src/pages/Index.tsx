@@ -1,6 +1,7 @@
-import { GraduationCap, BookOpen, Brain, Award, ArrowRight, Sparkles, MessageSquare, FileText, HelpCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { GraduationCap, BookOpen, Brain, Award, ArrowRight, Sparkles, MessageSquare, FileText, HelpCircle, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const courses = [
   {
@@ -82,6 +83,9 @@ const aiFeatures = [
 ];
 
 const Index = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navbar */}
@@ -100,8 +104,19 @@ const Index = () => {
             <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">About</a>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="text-muted-foreground">Login</Button>
-            <Button size="sm" className="gradient-hero text-primary-foreground border-0 shadow-soft hover:opacity-90 transition-opacity">Sign Up</Button>
+            {user ? (
+              <>
+                <span className="text-sm text-muted-foreground hidden md:block">{user.email}</span>
+                <Button variant="ghost" size="sm" className="text-muted-foreground gap-1" onClick={signOut}>
+                  <LogOut className="w-4 h-4" /> Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link to="/login"><Button variant="ghost" size="sm" className="text-muted-foreground">Login</Button></Link>
+                <Link to="/signup"><Button size="sm" className="gradient-hero text-primary-foreground border-0 shadow-soft hover:opacity-90 transition-opacity">Sign Up</Button></Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
