@@ -83,6 +83,9 @@ const aiFeatures = [
 ];
 
 const Index = () => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navbar */}
