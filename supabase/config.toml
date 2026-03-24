@@ -1,4 +1,4 @@
 project_id = "xzsikjhsqytctbaiqqae"
 
-[functions.ai-assistant]
+[functions.edubloom-ai]
 verify_jwt = false
