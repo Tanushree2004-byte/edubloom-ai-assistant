@@ -8,6 +8,9 @@ import Index from "./pages/Index.tsx";
 import AIAssistant from "./pages/AIAssistant.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
+import CoursePage from "./pages/CoursePage.tsx";
+import QuizPage from "./pages/QuizPage.tsx";
+import Quizzes from "./pages/Quizzes.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -24,6 +27,9 @@ const App = () => (
             <Route path="/ai-assistant" element={<AIAssistant />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/course/:courseId" element={<CoursePage />} />
+            <Route path="/quiz/:quizId" element={<QuizPage />} />
+            <Route path="/quizzes" element={<Quizzes />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

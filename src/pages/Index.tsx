@@ -1,73 +1,23 @@
-import { GraduationCap, BookOpen, Brain, Award, ArrowRight, Sparkles, MessageSquare, FileText, HelpCircle, LogOut } from "lucide-react";
+import { GraduationCap, BookOpen, Brain, Award, ArrowRight, Sparkles, MessageSquare, FileText, HelpCircle, LogOut, Loader2, CheckCircle2, ClipboardList } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEnrollments } from "@/hooks/useEnrollments";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-const courses = [
-  {
-    title: "Professional Python Masterclass",
-    instructor: "Shradha Khapra",
-    image: "https://img.youtube.com/vi/t2_Q2BRzeEE/maxresdefault.jpg",
-    duration: "16 weeks",
-    level: "Advanced",
-    lessons: 85,
-    price: "₹4,999",
-    category: "Programming",
-    premium: true,
-  },
-  {
-    title: "Full Stack Web Development Pro",
-    instructor: "Apna College",
-    image: "https://img.youtube.com/vi/Vi9bxu-M-ag/maxresdefault.jpg",
-    duration: "20 weeks",
-    level: "Advanced",
-    lessons: 120,
-    price: "₹6,999",
-    category: "Web Development",
-    premium: true,
-  },
-  {
-    title: "Data Science & AI Certification",
-    instructor: "Intellipaat",
-    image: "https://img.youtube.com/vi/KZgd2UiapE0/maxresdefault.jpg",
-    duration: "24 weeks",
-    level: "Advanced",
-    lessons: 150,
-    price: "₹8,999",
-    category: "Data Science",
-    premium: true,
-  },
-  {
-    title: "Java Programming Fundamentals",
-    instructor: "Telusko",
-    image: "https://img.youtube.com/vi/UmnCZ7-9yDY/maxresdefault.jpg",
-    duration: "10 weeks",
-    level: "Beginner",
-    lessons: 60,
-    category: "Programming",
-    premium: false,
-  },
-  {
-    title: "Machine Learning A-Z",
-    instructor: "CodeWithHarry",
-    image: "https://img.youtube.com/vi/7eh4d6sabA0/maxresdefault.jpg",
-    duration: "14 weeks",
-    level: "Intermediate",
-    lessons: 90,
-    category: "Data Science",
-    premium: false,
-  },
-  {
-    title: "React.js Complete Guide",
-    instructor: "Chai aur Code",
-    image: "https://img.youtube.com/vi/FxgM9k1rg0Q/maxresdefault.jpg",
-    duration: "12 weeks",
-    level: "Intermediate",
-    lessons: 75,
-    category: "Web Development",
-    premium: false,
-  },
-];
+interface Course {
+  id: string;
+  title: string;
+  instructor: string;
+  image: string;
+  duration: string;
+  level: string;
+  lessons: number;
+  price: string | null;
+  category: string;
+  premium: boolean;
+}
 
 const features = [
   { icon: GraduationCap, title: "Expert Instructors", desc: "Learn from industry professionals with years of real-world experience" },
@@ -85,6 +35,24 @@ const aiFeatures = [
 const Index = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { enrolledCourseIds, enrollingId, enroll } = useEnrollments();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
+
+  useEffect(() => {
+    supabase.from("courses").select("*").then(({ data }) => {
+      if (data) setCourses(data);
+      setLoadingCourses(false);
+    });
+  }, []);
+
+  const handleEnroll = async (courseId: string) => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    await enroll(courseId);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,6 +68,9 @@ const Index = () => {
           <div className="hidden md:flex items-center gap-8">
             <Link to="/" className="text-sm font-medium text-foreground hover:text-primary transition-colors">Home</Link>
             <Link to="/ai-assistant" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">AI Assistant</Link>
+            <Link to="/quizzes" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+              <ClipboardList className="w-4 h-4" /> Quizzes
+            </Link>
             <a href="#courses" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Courses</a>
             <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">About</a>
           </div>
@@ -123,12 +94,10 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden">
-        {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
           <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-secondary/20 blur-3xl" />
         </div>
-        
         <div className="container mx-auto px-6 relative">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent text-accent-foreground text-sm font-medium mb-6 animate-fade-in">
@@ -150,9 +119,11 @@ const Index = () => {
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="border-border hover:bg-accent gap-2 px-8">
-                Browse Courses
-              </Button>
+              <a href="#courses">
+                <Button size="lg" variant="outline" className="border-border hover:bg-accent gap-2 px-8">
+                  Browse Courses
+                </Button>
+              </a>
             </div>
           </div>
         </div>
@@ -215,36 +186,62 @@ const Index = () => {
           <h2 className="font-display text-3xl md:text-4xl font-bold text-center mb-12">
             Featured <span className="text-gradient">Courses</span>
           </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course, i) => (
-              <div key={i} className="glass-card rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-soft hover:-translate-y-1 group">
-                <div className="relative overflow-hidden">
-                  <img src={course.image} alt={course.title} className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute top-3 left-3 flex gap-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${course.premium ? 'gradient-hero text-primary-foreground' : 'bg-green-500/90 text-primary-foreground'}`}>
-                      {course.premium ? "PREMIUM" : "FREE"}
-                    </span>
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm text-foreground">
-                      {course.lessons} Lessons
-                    </span>
-                  </div>
-                </div>
-                <div className="p-5">
-                  <span className="text-xs font-medium text-primary">{course.category}</span>
-                  <h3 className="font-display font-semibold text-foreground mt-1 mb-2">{course.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">{course.instructor}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="text-xs text-muted-foreground">
-                      {course.duration} · {course.level}
+          {loadingCourses ? (
+            <div className="flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {courses.map((course) => {
+                const isEnrolled = enrolledCourseIds.has(course.id);
+                return (
+                  <div key={course.id} className="glass-card rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-soft hover:-translate-y-1 group">
+                    <Link to={`/course/${course.id}`}>
+                      <div className="relative overflow-hidden">
+                        <img src={course.image} alt={course.title} className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-105" />
+                        <div className="absolute top-3 left-3 flex gap-2">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${course.premium ? 'gradient-hero text-primary-foreground' : 'bg-green-500/90 text-primary-foreground'}`}>
+                            {course.premium ? "PREMIUM" : "FREE"}
+                          </span>
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-background/80 backdrop-blur-sm text-foreground">
+                            {course.lessons} Lessons
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+                    <div className="p-5">
+                      <span className="text-xs font-medium text-primary">{course.category}</span>
+                      <Link to={`/course/${course.id}`}>
+                        <h3 className="font-display font-semibold text-foreground mt-1 mb-2 hover:text-primary transition-colors">{course.title}</h3>
+                      </Link>
+                      <p className="text-sm text-muted-foreground mb-3">{course.instructor}</p>
+                      <div className="flex items-center justify-between">
+                        <div className="text-xs text-muted-foreground">
+                          {course.duration} · {course.level}
+                        </div>
+                        {isEnrolled ? (
+                          <Link to={`/course/${course.id}`}>
+                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-primary-foreground text-xs gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Enrolled
+                            </Button>
+                          </Link>
+                        ) : (
+                          <Button
+                            size="sm"
+                            disabled={enrollingId === course.id}
+                            className={course.premium ? "gradient-hero text-primary-foreground border-0 text-xs" : "text-xs"}
+                            variant={course.premium ? "default" : "outline"}
+                            onClick={() => handleEnroll(course.id)}
+                          >
+                            {enrollingId === course.id ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                            {course.price || "Enroll Free"}
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <Button size="sm" variant={course.premium ? "default" : "outline"} className={course.premium ? "gradient-hero text-primary-foreground border-0 text-xs" : "text-xs"}>
-                      {course.price || "Enroll Free"}
-                    </Button>
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
