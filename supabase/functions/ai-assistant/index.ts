@@ -29,9 +29,11 @@ serve(async (req) => {
       prompt = `You are EduBloom AI, a friendly and knowledgeable academic tutor. Give clear, concise explanations. Use examples when helpful.\n\n${history}\nTutor:`;
     }
 
-    // Use Hugging Face Inference API with a capable free model
+    // Use Hugging Face Router API (new endpoint)
+    const hfUrl = "https://router.huggingface.co/hf-inference/models/google/flan-t5-large";
+    console.log("Calling HF at:", hfUrl);
     const response = await fetch(
-      "https://router.huggingface.co/hf-inference/models/google/flan-t5-large",
+      hfUrl,
       {
         method: "POST",
         headers: {
