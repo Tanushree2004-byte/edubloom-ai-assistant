@@ -1,6 +1,7 @@
-import { GraduationCap, BookOpen, Brain, Award, ArrowRight, Sparkles, MessageSquare, FileText, HelpCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { GraduationCap, BookOpen, Brain, Award, ArrowRight, Sparkles, MessageSquare, FileText, HelpCircle, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 const courses = [
   {
