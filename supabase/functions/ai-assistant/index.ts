@@ -1,3 +1,4 @@
+// EduBloom AI Study Assistant - Edge Function v2
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -6,80 +7,82 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
-    const { messages, mode } = await req.json();
-    const HF_TOKEN = Deno.env.get("HUGGINGFACE_API_TOKEN");
-    if (!HF_TOKEN) throw new Error("HUGGINGFACE_API_TOKEN not configured");
+    const body = await req.json();
+    const messages = body.messages || [];
+    const mode = body.mode || "chat";
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
 
-    let prompt = "";
-    
-    if (mode === "summarize") {
-      const text = messages[messages.length - 1]?.content || "";
-      prompt = `Summarize the following text concisely, highlighting the key points:\n\n${text}`;
-    } else if (mode === "questions") {
-      const topic = messages[messages.length - 1]?.content || "";
-      prompt = `Generate 5 practice questions with answers for the topic: ${topic}. Format each as "Q: question\\nA: answer" separated by blank lines.`;
-    } else {
-      // Chat mode - build conversational context
-      const history = messages.map((m: { role: string; content: string }) => 
-        `${m.role === "user" ? "Student" : "Tutor"}: ${m.content}`
-      ).join("\n");
-      prompt = `You are EduBloom AI, a friendly and knowledgeable academic tutor. Give clear, concise explanations. Use examples when helpful.\n\n${history}\nTutor:`;
-    }
-
-    // Use Hugging Face Inference API with a capable free model
-    const response = await fetch(
-      "https://api-inference.huggingface.co/models/google/flan-t5-large",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${HF_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 500,
-            temperature: 0.7,
-            top_p: 0.9,
-            do_sample: true,
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("HF API error:", response.status, errorText);
-      
-      if (response.status === 503) {
-        return new Response(
-          JSON.stringify({ error: "Model is loading, please try again in a few seconds.", loading: true }),
-          { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
+    if (!apiKey) {
+      console.error("LOVABLE_API_KEY missing");
       return new Response(
-        JSON.stringify({ error: "AI service error. Please try again." }),
+        JSON.stringify({ error: "AI service not configured." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const data = await response.json();
-    const generatedText = Array.isArray(data) 
-      ? data[0]?.generated_text || "I couldn't generate a response. Please try again."
-      : data?.generated_text || "I couldn't generate a response. Please try again.";
+    let systemPrompt: string;
 
+    if (mode === "summarize") {
+      systemPrompt = "You are a study assistant. Summarize the given text concisely with bullet points highlighting key points.";
+    } else if (mode === "questions") {
+      systemPrompt = "You are a study assistant. Generate exactly 5 practice questions with answers for the given topic. Use format: Q1: [question]\\nA1: [answer]";
+    } else {
+      systemPrompt = "You are EduBloom AI, a friendly academic tutor. Give clear, concise explanations with examples. Keep responses educational and helpful.";
+    }
+
+    const chatMessages = [
+      { role: "system" as const, content: systemPrompt },
+      ...messages.map((m: { role: string; content: string }) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      })),
+    ];
+
+    console.log("v2 calling gateway, mode:", mode, "msgs:", chatMessages.length);
+
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: chatMessages,
+      }),
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      console.error("Gateway err:", res.status, txt);
+      const status = res.status === 429 || res.status === 402 ? res.status : 500;
+      const msg = res.status === 429
+        ? "Rate limit reached. Please wait a moment."
+        : res.status === 402
+        ? "AI credits exhausted."
+        : "AI service error. Please try again.";
+      return new Response(JSON.stringify({ error: msg }), {
+        status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const data = await res.json();
+    const content = data.choices?.[0]?.message?.content || "No response generated.";
+    console.log("v2 success, length:", content.length);
+
+    return new Response(JSON.stringify({ response: content }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("v2 error:", err);
     return new Response(
-      JSON.stringify({ response: generatedText }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (e) {
-    console.error("Edge function error:", e);
-    return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
