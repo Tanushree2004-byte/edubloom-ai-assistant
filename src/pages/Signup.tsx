@@ -8,11 +8,11 @@ import { GraduationCap, Mail, Lock, User, ArrowRight, Loader2, CheckCircle2 } fr
 import { toast } from "@/hooks/use-toast";
 
 const Signup = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
