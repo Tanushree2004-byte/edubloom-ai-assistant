@@ -31,7 +31,7 @@ serve(async (req) => {
 
     // Use Hugging Face Inference API with a capable free model
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/google/flan-t5-large",
+      "https://router.huggingface.co/hf-inference/models/google/flan-t5-large",
       {
         method: "POST",
         headers: {
