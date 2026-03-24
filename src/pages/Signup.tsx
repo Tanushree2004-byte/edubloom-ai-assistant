@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,11 +8,11 @@ import { GraduationCap, Mail, Lock, User, ArrowRight, Loader2, CheckCircle2 } fr
 import { toast } from "@/hooks/use-toast";
 
 const Signup = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,31 +30,11 @@ const Signup = () => {
     if (error) {
       toast({ title: "Signup failed", description: error.message, variant: "destructive" });
     } else {
-      setSuccess(true);
+      toast({ title: "Account created!", description: "Welcome to EduBloom!" });
+      navigate("/");
     }
     setLoading(false);
   };
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-secondary/20 blur-3xl" />
-        </div>
-        <div className="relative glass-card rounded-2xl p-8 max-w-md mx-4 text-center">
-          <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h2 className="font-display text-2xl font-bold text-foreground mb-2">Check Your Email</h2>
-          <p className="text-muted-foreground text-sm mb-6">
-            We've sent a verification link to <strong>{email}</strong>. Please click the link to verify your account before signing in.
-          </p>
-          <Link to="/login">
-            <Button className="gradient-hero text-primary-foreground border-0">Go to Login</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
