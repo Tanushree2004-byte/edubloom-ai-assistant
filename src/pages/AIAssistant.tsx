@@ -79,7 +79,7 @@ const AIAssistant = () => {
   }, [chatMessages, chatLoading]);
 
   const callAI = async (messages: Message[], mode: string) => {
-    const { data, error } = await supabase.functions.invoke("study-ai", {
+    const { data, error } = await supabase.functions.invoke("ai-assistant", {
       body: { messages, mode },
     });
     if (error) throw error;
